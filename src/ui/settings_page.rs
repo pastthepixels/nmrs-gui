@@ -1,8 +1,6 @@
 use gtk::prelude::*;
 use gtk::{Align, Box, Button, Label, Orientation};
 
-const CUSTOM_INDEX: u32 = 0;
-
 pub struct SettingsPage {
     root: gtk::Box,
 }
