@@ -2,8 +2,7 @@ use adw::prelude::PreferencesGroupExt;
 use adw::prelude::*;
 use gtk::Align;
 use gtk::GestureClick;
-use gtk::prelude::*;
-use gtk::{Box, Image, Label, Orientation};
+use gtk::Image;
 use nmrs::models;
 use std::rc::Rc;
 
@@ -107,15 +106,14 @@ pub fn wired_devices_view(
         let row = adw::ActionRow::new();
 
         row.set_title(&format!("{} ({})", device.interface, device.device_type));
-        match device.state {
+        if let Some(s) = match device.state {
             models::DeviceState::Activated => Some("Connected"),
             models::DeviceState::Disconnected => Some("Disconnected"),
             models::DeviceState::Unavailable => Some("Unavailable"),
             models::DeviceState::Failed => Some("Failed"),
             // Hide transitional states (Unmanaged, Prepare, Config, etc)
             _ => None,
-        }
-        .map(|s| row.set_subtitle(s));
+        } { row.set_subtitle(s) }
 
         let icon = Image::from_icon_name("network-wired-symbolic");
         icon.add_css_class("wired-icon");

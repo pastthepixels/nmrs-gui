@@ -1,8 +1,7 @@
 use adw::prelude::*;
 use anyhow::Result;
 use gtk::Align;
-use gtk::GestureClick;
-use gtk::{Box, Image, Label, Orientation};
+use gtk::{Image, Label};
 use nmrs::models::WifiSecurity;
 use nmrs::{NetworkManager, models};
 use std::collections::HashSet;
