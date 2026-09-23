@@ -1,3 +1,4 @@
+use adw::prelude::PreferencesRowExt;
 use gtk::prelude::*;
 use gtk::{Align, Box as GtkBox, GestureClick, Image, Label, ListBox, ListBoxRow, Orientation};
 use nmrs::VpnConnection;
@@ -37,21 +38,9 @@ pub fn vpn_section(
 }
 
 pub fn vpn_add_button(ctx: &NetworksContext, list_container: &GtkBox) {
-    let row = ListBoxRow::new();
-    row.add_css_class("network-selection");
-    row.add_css_class("vpn-add-row");
-
-    let hbox = GtkBox::new(Orientation::Horizontal, 6);
-
-    let icon = Image::from_icon_name("list-add-symbolic");
-    icon.add_css_class("vpn-add-icon");
-    hbox.append(&icon);
-
-    let label = Label::new(Some("Add VPN"));
-    label.add_css_class("vpn-add-label");
-    hbox.append(&label);
-
-    row.set_child(Some(&hbox));
+    let row = adw::ButtonRow::new();
+    row.set_title("Add VPN");
+    row.set_start_icon_name(Some("list-add-symbolic"));
 
     let click = GestureClick::new();
     let stack = ctx.stack.clone();
@@ -61,7 +50,7 @@ pub fn vpn_add_button(ctx: &NetworksContext, list_container: &GtkBox) {
     row.add_controller(click);
 
     let add_list = ListBox::new();
-    add_list.add_css_class("vpn-list");
+    add_list.add_css_class("boxed-list");
     add_list.append(&row);
     list_container.append(&add_list);
 }

@@ -430,15 +430,6 @@ pub async fn refresh_networks(
         }
     }
 
-    let wireless_header = Label::new(Some("Wireless"));
-    wireless_header.add_css_class("section-header");
-    wireless_header.add_css_class("wireless-section-header");
-    wireless_header.set_halign(Align::Start);
-    wireless_header.set_margin_top(8);
-    wireless_header.set_margin_bottom(4);
-    wireless_header.set_margin_start(12);
-    list_container.append(&wireless_header);
-
     if let Err(err) = ctx.nm.scan_networks(None).await {
         ctx.status.set_text(&format!("Scan failed: {err}"));
         ctx.scan_spinner.stop();
@@ -483,7 +474,7 @@ pub async fn refresh_networks(
 
             ctx.status.set_text("");
 
-            let list: ListBox = networks::networks_view(
+            let list: adw::PreferencesGroup = networks::networks_view(
                 ctx.clone(),
                 &nets,
                 current_ssid.as_deref(),
@@ -593,15 +584,6 @@ pub async fn refresh_networks_no_scan(
         }
     }
 
-    let wireless_header = Label::new(Some("Wireless"));
-    wireless_header.add_css_class("section-header");
-    wireless_header.add_css_class("wireless-section-header");
-    wireless_header.set_halign(Align::Start);
-    wireless_header.set_margin_top(8);
-    wireless_header.set_margin_bottom(4);
-    wireless_header.set_margin_start(12);
-    list_container.append(&wireless_header);
-
     let saved_ssids = saved_network_ids(&ctx).await;
 
     match ctx.nm.list_networks(None).await {
@@ -626,7 +608,7 @@ pub async fn refresh_networks_no_scan(
                 seen_combinations.insert(key)
             });
 
-            let list: ListBox = networks::networks_view(
+            let list: adw::PreferencesGroup = networks::networks_view(
                 ctx.clone(),
                 &nets,
                 current_ssid.as_deref(),

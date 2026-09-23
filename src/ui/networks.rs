@@ -1,3 +1,4 @@
+use adw::prelude::*;
 use anyhow::Result;
 use gtk::Align;
 use gtk::GestureClick;
@@ -12,8 +13,8 @@ use crate::ui::connect;
 use crate::ui::network_page::NetworkPage;
 
 pub struct NetworkRowController {
-    pub row: gtk::ListBoxRow,
-    pub arrow: gtk::Image,
+    pub row: adw::ActionRow,
+    pub arrow: gtk::Button,
     pub ctx: Rc<NetworksContext>,
     pub net: models::Network,
     pub details_page: Rc<NetworkPage>,
@@ -66,8 +67,8 @@ impl NetworksContext {
 
 impl NetworkRowController {
     pub fn new(
-        row: gtk::ListBoxRow,
-        arrow: gtk::Image,
+        row: adw::ActionRow,
+        arrow: gtk::Button,
         ctx: Rc<NetworksContext>,
         net: models::Network,
         details_page: Rc<NetworkPage>,
@@ -201,9 +202,10 @@ pub fn networks_view(
     current_ssid: Option<&str>,
     current_band: Option<&str>,
     saved_ssids: &HashSet<String>,
-) -> ListBox {
+) -> adw::PreferencesGroup {
     let conn_threshold = 75;
-    let list = ListBox::new();
+    let list = adw::PreferencesGroup::new();
+    list.set_title("Wireless");
 
     let mut sorted_networks: Vec<_> = networks
         .iter()
@@ -223,7 +225,7 @@ pub fn networks_view(
     });
 
     for net in sorted_networks {
-        let row = ListBoxRow::new();
+        let row = adw::ActionRow::new();
         let hbox = Box::new(Orientation::Horizontal, 6);
 
         row.add_css_class("network-selection");
@@ -237,21 +239,17 @@ pub fn networks_view(
             None => net.ssid.clone(),
         };
 
-        hbox.append(&Label::new(Some(&display_name)));
+        row.set_title(&display_name);
 
         if is_current_network(&net, current_ssid, current_band) {
             let connected_label = Label::new(Some("Connected"));
             connected_label.add_css_class("connected-label");
-            hbox.append(&connected_label);
+            row.add_prefix(&connected_label);
         } else if saved_ssids.contains(&net.ssid) {
             let saved_label = Label::new(Some("Saved"));
             saved_label.add_css_class("saved-label");
-            hbox.append(&saved_label);
+            row.add_prefix(&saved_label);
         }
-
-        let spacer = Box::new(Orientation::Horizontal, 0);
-        spacer.set_hexpand(true);
-        hbox.append(&spacer);
 
         if let Some(s) = net.strength {
             let icon_name = if net.secured {
@@ -268,8 +266,8 @@ pub fn networks_view(
             }
 
             let strength_label = Label::new(Some(&format!("{s}%")));
-            hbox.append(&image);
-            hbox.append(&strength_label);
+            row.add_suffix(&image);
+            row.add_suffix(&strength_label);
 
             if s >= conn_threshold {
                 strength_label.add_css_class("network-good");
@@ -280,13 +278,13 @@ pub fn networks_view(
             }
         }
 
-        let arrow = Image::from_icon_name("go-next-symbolic");
+        let arrow = gtk::Button::from_icon_name("go-next-symbolic");
+        arrow.set_valign(Align::Center);
+        arrow.set_vexpand(false);
         arrow.set_halign(Align::End);
-        arrow.add_css_class("network-arrow");
+        arrow.add_css_class("flat");
         arrow.set_cursor_from_name(Some("pointer"));
-        hbox.append(&arrow);
-
-        row.set_child(Some(&hbox));
+        row.add_suffix(&arrow);
 
         let controller = NetworkRowController::new(
             row.clone(),
@@ -298,7 +296,7 @@ pub fn networks_view(
 
         controller.attach();
 
-        list.append(&row);
+        list.add(&row);
     }
     list
 }

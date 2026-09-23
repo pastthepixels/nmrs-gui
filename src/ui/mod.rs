@@ -55,9 +55,14 @@ pub fn build_ui(app: &Application) {
     scan_spinner.add_css_class("scan-spinner");
     scan_spinner.set_visible(false);
 
-    let list_container = GtkBox::new(Orientation::Vertical, 0);
+    let list_container = GtkBox::new(Orientation::Vertical, 24);
     let stack = Stack::new();
     let is_scanning = Rc::new(Cell::new(false));
+    // FIXME replace with libadw. layout
+    list_container.set_margin_bottom(24);
+    list_container.set_margin_top(24);
+    list_container.set_margin_start(24);
+    list_container.set_margin_end(24);
 
     let spinner = Spinner::new();
     spinner.set_halign(gtk::Align::Center);
