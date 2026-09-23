@@ -8,8 +8,6 @@ use nmrs::{NetworkManager, WireGuardConfig, WireGuardPeer};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::ui::inherit_color_scheme;
-
 type OnSuccessCallback = Rc<RefCell<Option<Rc<dyn Fn()>>>>;
 
 pub struct VpnAddPage {
@@ -18,7 +16,7 @@ pub struct VpnAddPage {
 }
 
 impl VpnAddPage {
-    pub fn new(stack: &gtk::Stack, parent_window: &gtk::ApplicationWindow) -> Self {
+    pub fn new(stack: &gtk::Stack, parent_window: &adw::ApplicationWindow) -> Self {
         let root = GtkBox::new(Orientation::Vertical, 12);
         root.add_css_class("network-page");
 
@@ -251,7 +249,7 @@ impl VpnAddPage {
 
     fn build_openvpn_tab(
         stack: &gtk::Stack,
-        parent_window: &gtk::ApplicationWindow,
+        parent_window: &adw::ApplicationWindow,
         on_success: &OnSuccessCallback,
     ) -> gtk::Box {
         let page = GtkBox::new(Orientation::Vertical, 8);
@@ -295,7 +293,6 @@ impl VpnAddPage {
                         ("Open", ResponseType::Accept),
                     ],
                 );
-                inherit_color_scheme(&dialog, &parent);
                 dialog.connect_response(move |dialog, response| {
                     if response == ResponseType::Accept
                         && let Some(file) = dialog.file()

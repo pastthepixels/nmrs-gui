@@ -1,7 +1,8 @@
+use adw::ApplicationWindow;
 use glib::Propagation;
 use gtk::{
-    ApplicationWindow, Box as GtkBox, Button, CheckButton, Dialog, Entry, EventControllerKey,
-    FileChooserAction, FileChooserDialog, Label, Orientation, ResponseType, prelude::*,
+    Box as GtkBox, Button, CheckButton, Dialog, Entry, EventControllerKey, FileChooserAction,
+    FileChooserDialog, Label, Orientation, ResponseType, prelude::*,
 };
 use log::{debug, error};
 use nmrs::{
@@ -9,8 +10,6 @@ use nmrs::{
     models::{EapMethod, EapOptions, Phase2, WifiSecurity},
 };
 use std::rc::Rc;
-
-use crate::ui::inherit_color_scheme;
 
 pub fn connect_modal(
     nm: Rc<NetworkManager>,
@@ -47,7 +46,6 @@ fn draw_connect_modal(
     dialog.set_title(Some("Connect to Network"));
     dialog.set_transient_for(Some(parent));
     dialog.set_modal(true);
-    inherit_color_scheme(&dialog, parent);
     dialog.add_css_class("diag-buttons");
 
     let content_area = dialog.content_area();
@@ -127,7 +125,6 @@ fn draw_connect_modal(
                         ("Open", ResponseType::Accept),
                     ],
                 );
-                inherit_color_scheme(&file_dialog, &parent_dialog);
 
                 let cert_entry = cert_entry_for_browse.clone();
                 file_dialog.connect_response(move |dialog, response| {

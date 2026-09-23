@@ -1,10 +1,7 @@
 use gtk::prelude::*;
 use gtk::{Align, Box, Button, Label, Orientation};
 
-use crate::ui::apply_color_scheme_override;
-use crate::ui::apply_system_color_scheme;
 use crate::ui::header::THEMES;
-use crate::ui::supports_system_color_scheme;
 
 const CUSTOM_INDEX: u32 = 0;
 
@@ -13,7 +10,7 @@ pub struct SettingsPage {
 }
 
 impl SettingsPage {
-    pub fn new(stack: &gtk::Stack, window: &gtk::ApplicationWindow) -> Self {
+    pub fn new(stack: &gtk::Stack, window: &adw::ApplicationWindow) -> Self {
         let root = Box::new(Orientation::Vertical, 12);
         root.add_css_class("settings-page");
         root.set_margin_top(12);
@@ -99,7 +96,7 @@ impl SettingsPage {
         root.append(&section);
     }
 
-    fn build_appearance_section(root: &gtk::Box, window: &gtk::ApplicationWindow) {
+    fn build_appearance_section(root: &gtk::Box, window: &adw::ApplicationWindow) {
         let section = Box::new(Orientation::Vertical, 6);
 
         let label = Label::new(Some("Appearance"));
@@ -111,7 +108,6 @@ impl SettingsPage {
 
         let system_btn = Button::with_label("System");
         system_btn.add_css_class("appearance-btn");
-        system_btn.set_visible(supports_system_color_scheme());
 
         let light_btn = Button::with_label("Light");
         light_btn.add_css_class("appearance-btn");
@@ -126,7 +122,6 @@ impl SettingsPage {
             system_btn.connect_clicked(move |btn| {
                 if let Some(window) = window_weak.upgrade() {
                     window.add_css_class("system-theme");
-                    apply_system_color_scheme(&window);
                     btn.add_css_class("appearance-active");
                     light_btn_clone.remove_css_class("appearance-active");
                     dark_btn_clone.remove_css_class("appearance-active");
@@ -141,7 +136,6 @@ impl SettingsPage {
             light_btn.connect_clicked(move |btn| {
                 if let Some(window) = window_weak.upgrade() {
                     window.remove_css_class("system-theme");
-                    apply_color_scheme_override(&window, false);
                     btn.add_css_class("appearance-active");
                     system_btn_clone.remove_css_class("appearance-active");
                     dark_btn_clone.remove_css_class("appearance-active");
@@ -156,7 +150,6 @@ impl SettingsPage {
             dark_btn.connect_clicked(move |btn| {
                 if let Some(window) = window_weak.upgrade() {
                     window.remove_css_class("system-theme");
-                    apply_color_scheme_override(&window, true);
                     btn.add_css_class("appearance-active");
                     system_btn_clone.remove_css_class("appearance-active");
                     light_btn_clone.remove_css_class("appearance-active");

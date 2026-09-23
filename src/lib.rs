@@ -4,8 +4,8 @@ pub mod style;
 pub mod theme_config;
 pub mod ui;
 
+use adw::Application;
 use clap::{ArgAction, Parser};
-use gtk::Application;
 use gtk::prelude::*;
 
 use crate::file_lock::acquire_app_lock;
