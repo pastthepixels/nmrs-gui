@@ -77,7 +77,6 @@ impl SettingsPage {
             let idx = dd.selected();
 
             if idx == CUSTOM_INDEX {
-                crate::style::switch_to_custom();
                 crate::theme_config::save_theme("custom");
                 return;
             }
@@ -88,7 +87,6 @@ impl SettingsPage {
             }
 
             let theme = &THEMES[theme_idx];
-            crate::style::switch_to_theme(theme.css);
             crate::theme_config::save_theme(theme.key);
         });
 

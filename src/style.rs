@@ -24,7 +24,7 @@ fn custom_backup_path() -> PathBuf {
 
 /// Register a single persistent CSS provider and load `~/.config/nmrs/style.css`.
 /// If it doesn't exist, seeds it with the bundled default.
-pub fn init(default_css: &str) {
+pub fn init() {
     let display = Display::default().expect("No display found");
 
     PROVIDER.with(|p| {
@@ -36,33 +36,6 @@ pub fn init(default_css: &str) {
     });
 
     ensure_dir();
-    if !style_path().exists() {
-        write_file(&style_path(), default_css);
-    }
-    reload();
-}
-
-/// Switch to a named theme: if the user was on "Custom", back up their
-/// `style.css` to `style.custom.css` first. Then overwrite `style.css`
-/// with the theme content and reload.
-pub fn switch_to_theme(css: &str) {
-    let current = crate::theme_config::load_theme().unwrap_or_default();
-    if current == "custom" {
-        backup_custom();
-    }
-    write_file(&style_path(), css);
-    reload();
-}
-
-/// Switch to "Custom": restore `style.custom.css` back to `style.css`
-/// if a backup exists, then reload.
-pub fn switch_to_custom() {
-    let backup = custom_backup_path();
-    if backup.exists()
-        && let Ok(contents) = fs::read_to_string(&backup)
-    {
-        write_file(&style_path(), &contents);
-    }
     reload();
 }
 
@@ -82,13 +55,6 @@ fn backup_custom() {
     if src.exists() {
         fs::copy(&src, custom_backup_path()).ok();
     }
-}
-
-fn write_file(path: &PathBuf, contents: &str) {
-    ensure_dir();
-    let mut f = fs::File::create(path).expect("Failed to write CSS file");
-    f.write_all(contents.as_bytes())
-        .expect("Failed to write CSS file");
 }
 
 fn ensure_dir() {

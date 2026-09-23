@@ -43,7 +43,7 @@ pub fn run() -> anyhow::Result<()> {
     };
 
     app.connect_activate(|app| {
-        crate::style::init(include_str!("style.css"));
+        // crate::style::init(include_str!("style.css"));
         build_ui(app);
     });
 
