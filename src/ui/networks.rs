@@ -25,7 +25,7 @@ pub struct NetworksContext {
     pub status: Label,
     pub conn_icon: Image,
     pub conn_name: Label,
-    pub scan_spinner: gtk::Spinner,
+    pub scan_spinner: adw::Spinner,
     pub stack: gtk::Stack,
     pub parent_window: adw::ApplicationWindow,
     pub details_page: Rc<NetworkPage>,
@@ -39,7 +39,7 @@ impl NetworksContext {
         status: &Label,
         conn_icon: &Image,
         conn_name: &Label,
-        scan_spinner: &gtk::Spinner,
+        scan_spinner: &adw::Spinner,
         stack: &gtk::Stack,
         parent_window: &adw::ApplicationWindow,
         details_page: Rc<NetworkPage>,
@@ -216,13 +216,6 @@ pub fn networks_view(
 
     for net in sorted_networks {
         let row = adw::ActionRow::new();
-        let _hbox = Box::new(Orientation::Horizontal, 6);
-
-        row.add_css_class("network-selection");
-
-        if is_current_network(&net, current_ssid, current_band) {
-            row.add_css_class("connected");
-        }
 
         let display_name = match net.frequency.and_then(crate::ui::freq_to_band) {
             Some(band) => format!("{} ({band})", net.ssid),

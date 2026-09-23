@@ -1,7 +1,9 @@
+use adw::prelude::PreferencesGroupExt;
+use adw::prelude::*;
 use gtk::Align;
 use gtk::GestureClick;
 use gtk::prelude::*;
-use gtk::{Box, Image, Label, ListBox, ListBoxRow, Orientation};
+use gtk::{Box, Image, Label, Orientation};
 use nmrs::models;
 use std::rc::Rc;
 
@@ -9,8 +11,8 @@ use crate::ui::networks::NetworksContext;
 use crate::ui::wired_page::WiredPage;
 
 pub struct WiredDeviceRowController {
-    pub row: gtk::ListBoxRow,
-    pub arrow: gtk::Image,
+    pub row: adw::ActionRow,
+    pub arrow: gtk::Button,
     pub ctx: Rc<NetworksContext>,
     pub device: models::Device,
     pub details_page: Rc<WiredPage>,
@@ -18,8 +20,8 @@ pub struct WiredDeviceRowController {
 
 impl WiredDeviceRowController {
     pub fn new(
-        row: gtk::ListBoxRow,
-        arrow: gtk::Image,
+        row: adw::ActionRow,
+        arrow: gtk::Button,
         ctx: Rc<NetworksContext>,
         device: models::Device,
         details_page: Rc<WiredPage>,
@@ -104,65 +106,33 @@ pub fn wired_devices_view(
     ctx: Rc<NetworksContext>,
     devices: &[models::Device],
     details_page: Rc<WiredPage>,
-) -> ListBox {
-    let list = ListBox::new();
+) -> adw::PreferencesGroup {
+    let list = adw::PreferencesGroup::new();
+    list.set_title("Wired");
 
     for device in devices {
-        let row = ListBoxRow::new();
-        let hbox = Box::new(Orientation::Horizontal, 6);
+        let row = adw::ActionRow::new();
 
-        row.add_css_class("network-selection");
-
-        if device.state == models::DeviceState::Activated {
-            row.add_css_class("connected");
-        }
-
-        let display_name = format!("{} ({})", device.interface, device.device_type);
-        hbox.append(&Label::new(Some(&display_name)));
-
-        if device.state == models::DeviceState::Activated {
-            let connected_label = Label::new(Some("Connected"));
-            connected_label.add_css_class("connected-label");
-            hbox.append(&connected_label);
-        }
-
-        let spacer = Box::new(Orientation::Horizontal, 0);
-        spacer.set_hexpand(true);
-        hbox.append(&spacer);
-
-        // Only show state for meaningful states (not transitional ones)
-        let state_text = match device.state {
+        row.set_title(&format!("{} ({})", device.interface, device.device_type));
+        match device.state {
             models::DeviceState::Activated => Some("Connected"),
             models::DeviceState::Disconnected => Some("Disconnected"),
             models::DeviceState::Unavailable => Some("Unavailable"),
             models::DeviceState::Failed => Some("Failed"),
             // Hide transitional states (Unmanaged, Prepare, Config, etc)
             _ => None,
-        };
-
-        if let Some(text) = state_text {
-            let state_label = Label::new(Some(text));
-            state_label.add_css_class(match device.state {
-                models::DeviceState::Activated => "network-good",
-                models::DeviceState::Unavailable
-                | models::DeviceState::Disconnected
-                | models::DeviceState::Failed => "network-poor",
-                _ => "network-okay",
-            });
-            hbox.append(&state_label);
         }
+        .map(|s| row.set_subtitle(s));
 
         let icon = Image::from_icon_name("network-wired-symbolic");
         icon.add_css_class("wired-icon");
-        hbox.append(&icon);
+        row.add_prefix(&icon);
 
-        let arrow = Image::from_icon_name("go-next-symbolic");
-        arrow.set_halign(Align::End);
-        arrow.add_css_class("network-arrow");
-        arrow.set_cursor_from_name(Some("pointer"));
-        hbox.append(&arrow);
-
-        row.set_child(Some(&hbox));
+        let arrow = gtk::Button::from_icon_name("go-next-symbolic");
+        arrow.set_valign(Align::Center);
+        arrow.set_vexpand(false);
+        arrow.add_css_class("flat");
+        row.add_suffix(&arrow);
 
         let controller = WiredDeviceRowController::new(
             row.clone(),
@@ -174,7 +144,7 @@ pub fn wired_devices_view(
 
         controller.attach();
 
-        list.append(&row);
+        list.add(&row);
     }
     list
 }

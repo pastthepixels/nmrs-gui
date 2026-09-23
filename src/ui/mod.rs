@@ -49,17 +49,14 @@ pub fn build_ui(app: &Application) {
     conn_name.set_max_width_chars(20);
     conn_name.add_css_class("conn-status-name");
 
-    let scan_spinner = Spinner::new();
-    scan_spinner.set_size_request(14, 14);
-    scan_spinner.add_css_class("scan-spinner");
+    let scan_spinner = adw::Spinner::new();
     scan_spinner.set_visible(false);
 
     let list_container = GtkBox::new(Orientation::Vertical, 24);
     let stack = Stack::new();
     let is_scanning = Rc::new(Cell::new(false));
-    // FIXME replace with libadw. layout
     list_container.set_margin_bottom(24);
-    list_container.set_margin_top(12);
+    list_container.set_margin_top(4);
     list_container.set_margin_start(24);
     list_container.set_margin_end(24);
 

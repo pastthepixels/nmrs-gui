@@ -325,13 +325,10 @@ pub async fn refresh_networks(
 
     clear_children(list_container);
     ctx.scan_spinner.set_visible(true);
-    ctx.scan_spinner.start();
 
     // Fetch wired devices first
     match ctx.nm.list_wired_devices().await {
         Ok(wired_devices) => {
-            // eprintln!("Found {} wired devices total", wired_devices.len());
-
             let available_devices: Vec<_> = wired_devices
                 .into_iter()
                 .filter(|dev| {
@@ -342,45 +339,17 @@ pub async fn refresh_networks(
                             | models::DeviceState::Prepare
                             | models::DeviceState::Config
                     );
-                    /* eprintln!(
-                        "  - {} ({}): {} -> {}",
-                        dev.interface,
-                        dev.device_type,
-                        dev.state,
-                        if show { "SHOW" } else { "HIDE" }
-                    ); */
                     show
                 })
                 .collect();
 
-            /* eprintln!(
-                "Showing {} available wired devices",
-                available_devices.len()
-            ); */
-
             if !available_devices.is_empty() {
-                let wired_header = Label::new(Some("Wired"));
-                wired_header.add_css_class("section-header");
-                wired_header.add_css_class("wired-section-header");
-                wired_header.set_halign(Align::Start);
-                wired_header.set_margin_top(8);
-                wired_header.set_margin_bottom(4);
-                wired_header.set_margin_start(12);
-                list_container.append(&wired_header);
-
                 let wired_list = wired_devices::wired_devices_view(
                     ctx.clone(),
                     &available_devices,
                     ctx.wired_details_page.clone(),
                 );
-                wired_list.add_css_class("wired-devices-list");
                 list_container.append(&wired_list);
-
-                let separator = gtk::Separator::new(Orientation::Horizontal);
-                separator.add_css_class("device-separator");
-                separator.set_margin_top(12);
-                separator.set_margin_bottom(12);
-                list_container.append(&separator);
             }
         }
         Err(e) => {
@@ -390,7 +359,6 @@ pub async fn refresh_networks(
 
     if let Err(err) = ctx.nm.scan_networks(None).await {
         ctx.status.set_text(&format!("Scan failed: {err}"));
-        ctx.scan_spinner.stop();
         ctx.scan_spinner.set_visible(false);
         is_scanning.set(false);
         return;
@@ -461,7 +429,6 @@ pub async fn refresh_networks(
     apply_connectivity_status(&ctx).await;
     apply_connection_status(&ctx).await;
 
-    ctx.scan_spinner.stop();
     ctx.scan_spinner.set_visible(false);
     is_scanning.set(false);
 }
@@ -499,7 +466,7 @@ pub async fn refresh_networks_no_scan(
 
     is_scanning.set(true);
 
-    clear_children(list_container);
+    ctx.scan_spinner.set_visible(true);
 
     if let Ok(wired_devices) = ctx.nm.list_wired_devices().await {
         let available_devices: Vec<_> = wired_devices
@@ -546,6 +513,7 @@ pub async fn refresh_networks_no_scan(
 
     match ctx.nm.list_networks(None).await {
         Ok(mut nets) => {
+            clear_children(list_container);
             let current_conn = ctx.nm.current_connection_info().await;
             let (current_ssid, current_band) = if let Some((ssid, freq)) = current_conn {
                 let ssid_str = ssid.clone();
@@ -577,6 +545,7 @@ pub async fn refresh_networks_no_scan(
             ctx.stack.set_visible_child_name("networks");
         }
         Err(err) => {
+            clear_children(list_container);
             ctx.status
                 .set_text(&format!("Error fetching networks: {err}"));
         }
@@ -596,5 +565,6 @@ pub async fn refresh_networks_no_scan(
     apply_connectivity_status(&ctx).await;
     apply_connection_status(&ctx).await;
 
+    ctx.scan_spinner.set_visible(false);
     is_scanning.set(false);
 }
