@@ -2,7 +2,6 @@ pub mod connect;
 pub mod header;
 pub mod network_page;
 pub mod networks;
-pub mod settings_page;
 pub mod vpn_add_page;
 pub mod vpn_details_page;
 pub mod vpn_list;
@@ -36,7 +35,7 @@ pub fn build_ui(app: &Application) {
     win.set_title(Some(""));
     win.set_default_size(450, 600);
 
-    let vbox = GtkBox::new(Orientation::Vertical, 0);
+    let main_view = adw::ToolbarView::new();
     let status = Label::new(None);
     status.set_xalign(0.0);
     status.set_ellipsize(EllipsizeMode::End);
@@ -60,7 +59,7 @@ pub fn build_ui(app: &Application) {
     let is_scanning = Rc::new(Cell::new(false));
     // FIXME replace with libadw. layout
     list_container.set_margin_bottom(24);
-    list_container.set_margin_top(24);
+    list_container.set_margin_top(12);
     list_container.set_margin_start(24);
     list_container.set_margin_end(24);
 
@@ -75,63 +74,63 @@ pub fn build_ui(app: &Application) {
     stack.add_named(&spinner, Some("loading"));
     stack.set_visible_child_name("loading");
 
-    let status_clone = status.clone();
-    let list_container_clone = list_container.clone();
-    let stack_clone = stack.clone();
-    let win_clone = win.clone();
-    let is_scanning_clone = is_scanning.clone();
-    let vbox_clone = vbox.clone();
+    let networks_scroller = ScrolledWindow::new();
+    networks_scroller.set_vexpand(true);
+    networks_scroller.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
+    networks_scroller.set_child(Some(&list_container));
+
+    stack.add_named(&networks_scroller, Some("networks"));
+
+    stack.set_vexpand(true);
+    main_view.set_content(Some(&stack));
+
+    win.set_content(Some(&main_view));
+    win.show();
 
     glib::MainContext::default().spawn_local(async move {
         match nmrs::NetworkManager::new().await {
             Ok(nm) => {
                 let nm = Rc::new(nm);
 
-                let details_page = Rc::new(network_page::NetworkPage::new(&stack_clone));
+                let details_page = Rc::new(network_page::NetworkPage::new(&stack));
                 let details_scroller = ScrolledWindow::new();
                 details_scroller.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
                 details_scroller.set_child(Some(details_page.widget()));
-                stack_clone.add_named(&details_scroller, Some("details"));
+                stack.add_named(&details_scroller, Some("details"));
 
-                let wired_details_page = Rc::new(wired_page::WiredPage::new(&stack_clone));
+                let wired_details_page = Rc::new(wired_page::WiredPage::new(&stack));
                 let wired_details_scroller = ScrolledWindow::new();
                 wired_details_scroller
                     .set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
                 wired_details_scroller.set_child(Some(wired_details_page.widget()));
-                stack_clone.add_named(&wired_details_scroller, Some("wired-details"));
+                stack.add_named(&wired_details_scroller, Some("wired-details"));
 
-                let vpn_details_page = Rc::new(vpn_details_page::VpnDetailsPage::new(&stack_clone));
+                let vpn_details_page = Rc::new(vpn_details_page::VpnDetailsPage::new(&stack));
                 let vpn_details_scroller = ScrolledWindow::new();
                 vpn_details_scroller.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
                 vpn_details_scroller.set_child(Some(vpn_details_page.widget()));
-                stack_clone.add_named(&vpn_details_scroller, Some("vpn-details"));
+                stack.add_named(&vpn_details_scroller, Some("vpn-details"));
 
-                let vpn_add = vpn_add_page::VpnAddPage::new(&stack_clone, &win_clone);
+                let vpn_add = vpn_add_page::VpnAddPage::new(&stack, &win);
                 let vpn_add_scroller = ScrolledWindow::new();
                 vpn_add_scroller.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
                 vpn_add_scroller.set_child(Some(vpn_add.widget()));
-                stack_clone.add_named(&vpn_add_scroller, Some("vpn-add"));
+                stack.add_named(&vpn_add_scroller, Some("vpn-add"));
 
-                let settings = settings_page::SettingsPage::new(&stack_clone, &win_clone);
-                let settings_scroller = ScrolledWindow::new();
-                settings_scroller.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
-                settings_scroller.set_child(Some(settings.widget()));
-                stack_clone.add_named(&settings_scroller, Some("settings"));
-
-                let conn_icon_clone = conn_icon.clone();
-                let conn_name_clone = conn_name.clone();
-                let scan_spinner_clone = scan_spinner.clone();
+                let conn_icon = conn_icon.clone();
+                let conn_name = conn_name.clone();
+                let scan_spinner = scan_spinner.clone();
 
                 let on_success: Rc<dyn Fn()> = {
-                    let list_container = list_container_clone.clone();
-                    let is_scanning = is_scanning_clone.clone();
+                    let list_container = list_container.clone();
+                    let is_scanning = is_scanning.clone();
                     let nm = nm.clone();
-                    let status = status_clone.clone();
-                    let conn_icon = conn_icon_clone.clone();
-                    let conn_name = conn_name_clone.clone();
-                    let scan_spinner = scan_spinner_clone.clone();
-                    let stack = stack_clone.clone();
-                    let parent_window = win_clone.clone();
+                    let status = status.clone();
+                    let conn_icon = conn_icon.clone();
+                    let conn_name = conn_name.clone();
+                    let scan_spinner = scan_spinner.clone();
+                    let stack = stack.clone();
+                    let parent_window = win.clone();
                     let details_page = details_page.clone();
                     let wired_details_page = wired_details_page.clone();
                     let vpn_details_page = vpn_details_page.clone();
@@ -182,12 +181,12 @@ pub fn build_ui(app: &Application) {
                 let ctx = Rc::new(networks::NetworksContext {
                     nm: nm.clone(),
                     on_success: on_success.clone(),
-                    status: status_clone.clone(),
-                    conn_icon: conn_icon_clone.clone(),
-                    conn_name: conn_name_clone.clone(),
-                    scan_spinner: scan_spinner_clone.clone(),
-                    stack: stack_clone.clone(),
-                    parent_window: win_clone.clone(),
+                    status: status.clone(),
+                    conn_icon: conn_icon.clone(),
+                    conn_name: conn_name.clone(),
+                    scan_spinner: scan_spinner.clone(),
+                    stack: stack.clone(),
+                    parent_window: win.clone(),
                     details_page: details_page.clone(),
                     wired_details_page,
                     vpn_details_page: vpn_details_page.clone(),
@@ -197,21 +196,18 @@ pub fn build_ui(app: &Application) {
                 vpn_details_page.set_on_success(on_success.clone());
                 vpn_add.set_on_success(on_success);
 
-                let header = header::build_header(
-                    ctx.clone(),
-                    &list_container_clone,
-                    is_scanning_clone.clone(),
-                );
-                vbox_clone.prepend(&header);
+                let header =
+                    header::build_header(ctx.clone(), &list_container, is_scanning.clone());
+                main_view.add_top_bar(&header);
 
                 {
                     let nm_device_monitor = nm.clone();
                     let device_notify = Arc::new(Notify::new());
 
-                    let notify_clone = device_notify.clone();
+                    let notify = device_notify.clone();
                     glib::MainContext::default().spawn_local(async move {
                         loop {
-                            let notify = notify_clone.clone();
+                            let notify = notify.clone();
                             let result = nm_device_monitor
                                 .monitor_device_changes(move || {
                                     notify.notify_one();
@@ -225,8 +221,8 @@ pub fn build_ui(app: &Application) {
                         }
                     });
 
-                    let list_container_device = list_container_clone.clone();
-                    let is_scanning_device = is_scanning_clone.clone();
+                    let list_container_device = list_container.clone();
+                    let is_scanning_device = is_scanning.clone();
                     let ctx_device = ctx.clone();
                     glib::MainContext::default().spawn_local(async move {
                         loop {
@@ -252,10 +248,10 @@ pub fn build_ui(app: &Application) {
                     let nm_network_monitor = nm.clone();
                     let network_notify = Arc::new(Notify::new());
 
-                    let notify_clone = network_notify.clone();
+                    let notify = network_notify.clone();
                     glib::MainContext::default().spawn_local(async move {
                         loop {
-                            let notify = notify_clone.clone();
+                            let notify = notify.clone();
                             let result = nm_network_monitor
                                 .monitor_network_changes(move || {
                                     notify.notify_one();
@@ -269,8 +265,8 @@ pub fn build_ui(app: &Application) {
                         }
                     });
 
-                    let list_container_network = list_container_clone.clone();
-                    let is_scanning_network = is_scanning_clone.clone();
+                    let list_container_network = list_container.clone();
+                    let is_scanning_network = is_scanning.clone();
                     let ctx_network = ctx.clone();
                     glib::MainContext::default().spawn_local(async move {
                         loop {
@@ -293,21 +289,8 @@ pub fn build_ui(app: &Application) {
                 }
             }
             Err(err) => {
-                status_clone.set_text(&format!("Failed to initialize: {err}"));
+                status.set_text(&format!("Failed to initialize: {err}"));
             }
         }
     });
-
-    let networks_scroller = ScrolledWindow::new();
-    networks_scroller.set_vexpand(true);
-    networks_scroller.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
-    networks_scroller.set_child(Some(&list_container));
-
-    stack.add_named(&networks_scroller, Some("networks"));
-
-    stack.set_vexpand(true);
-    vbox.append(&stack);
-
-    win.set_content(Some(&vbox));
-    win.show();
 }

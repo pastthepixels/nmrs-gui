@@ -1,6 +1,7 @@
+use adw::HeaderBar;
 use glib::clone;
 use gtk::prelude::*;
-use gtk::{Align, Box as GtkBox, HeaderBar, Label, Orientation, Switch, glib};
+use gtk::{Align, Box as GtkBox, Label, Orientation, Switch, glib};
 use std::cell::Cell;
 use std::collections::HashSet;
 use std::rc::Rc;
@@ -25,7 +26,6 @@ pub fn build_header(
     is_scanning: Rc<Cell<bool>>,
 ) -> HeaderBar {
     let header = HeaderBar::new();
-    header.set_show_title_buttons(false);
 
     let list_container = list_container.clone();
 
@@ -34,6 +34,8 @@ pub fn build_header(
     left_box.set_halign(Align::Start);
 
     ctx.conn_icon.set_valign(Align::Center);
+    ctx.conn_icon.set_margin_end(5);
+    ctx.conn_icon.set_margin_start(5);
     left_box.append(&ctx.conn_icon);
 
     ctx.conn_name.set_valign(Align::Center);
@@ -66,33 +68,17 @@ pub fn build_header(
     left_box.set_hexpand(true);
     header.pack_start(&left_box);
 
-    // Right side: settings gear
-    let settings_btn = gtk::Button::from_icon_name("emblem-system-symbolic");
-    settings_btn.set_has_frame(false);
-    settings_btn.set_valign(Align::Center);
-    settings_btn.set_tooltip_text(Some("Settings"));
-    settings_btn.add_css_class("settings-btn");
-    {
-        let stack = ctx.stack.clone();
-        settings_btn.connect_clicked(move |_| {
-            stack.set_visible_child_name("settings");
-        });
-    }
-    header.pack_end(&settings_btn);
-
     // Right side: radio controls (airplane + wifi switch)
-    let airplane_btn = gtk::Button::new();
-    airplane_btn.set_valign(Align::Center);
-    airplane_btn.set_has_frame(false);
-    airplane_btn.set_icon_name("airplane-mode-symbolic");
-    airplane_btn.set_tooltip_text(Some("Toggle Airplane Mode"));
-    airplane_btn.add_css_class("airplane-btn");
-    header.pack_end(&airplane_btn);
-
     let wifi_switch = Switch::new();
     wifi_switch.set_valign(Align::Center);
     wifi_switch.set_size_request(24, 24);
     header.pack_end(&wifi_switch);
+
+    let airplane_btn = gtk::Button::from_icon_name("airplane-mode-symbolic");
+    airplane_btn.set_valign(Align::Center);
+    airplane_btn.set_has_frame(false);
+    airplane_btn.set_tooltip_text(Some("Toggle Airplane Mode"));
+    header.pack_end(&airplane_btn);
 
     // Right side: refresh
     let refresh_btn = gtk::Button::from_icon_name("view-refresh-symbolic");
@@ -246,7 +232,7 @@ async fn apply_airplane_icon(btn: &gtk::Button, ctx: &NetworksContext) {
                 btn.set_tooltip_text(Some("Airplane Mode is ON — click to disable"));
                 btn.add_css_class("airplane-active");
             } else {
-                btn.set_icon_name("network-wireless-symbolic");
+                btn.set_icon_name("airplane-mode-disabled-symbolic");
                 btn.set_tooltip_text(Some("Airplane Mode is OFF — click to enable"));
                 btn.remove_css_class("airplane-active");
             }
