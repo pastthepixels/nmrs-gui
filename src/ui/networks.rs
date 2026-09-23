@@ -2,8 +2,7 @@ use adw::prelude::*;
 use anyhow::Result;
 use gtk::Align;
 use gtk::GestureClick;
-use gtk::prelude::*;
-use gtk::{Box, Image, Label, ListBox, ListBoxRow, Orientation};
+use gtk::{Box, Image, Label, Orientation};
 use nmrs::models::WifiSecurity;
 use nmrs::{NetworkManager, models};
 use std::collections::HashSet;
@@ -226,7 +225,7 @@ pub fn networks_view(
 
     for net in sorted_networks {
         let row = adw::ActionRow::new();
-        let hbox = Box::new(Orientation::Horizontal, 6);
+        let _hbox = Box::new(Orientation::Horizontal, 6);
 
         row.add_css_class("network-selection");
 

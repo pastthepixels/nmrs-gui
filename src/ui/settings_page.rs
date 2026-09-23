@@ -8,7 +8,7 @@ pub struct SettingsPage {
 }
 
 impl SettingsPage {
-    pub fn new(stack: &gtk::Stack, window: &adw::ApplicationWindow) -> Self {
+    pub fn new(stack: &gtk::Stack, _window: &adw::ApplicationWindow) -> Self {
         let root = Box::new(Orientation::Vertical, 12);
         root.add_css_class("settings-page");
         root.set_margin_top(12);

@@ -3,7 +3,6 @@ use gtk::gio::File;
 use gtk::{CssProvider, STYLE_PROVIDER_PRIORITY_USER};
 use std::cell::RefCell;
 use std::fs;
-use std::io::Write;
 use std::path::PathBuf;
 
 thread_local! {
@@ -16,10 +15,6 @@ fn config_dir() -> PathBuf {
 
 fn style_path() -> PathBuf {
     config_dir().join("style.css")
-}
-
-fn custom_backup_path() -> PathBuf {
-    config_dir().join("style.custom.css")
 }
 
 /// Register a single persistent CSS provider and load `~/.config/nmrs/style.css`.
@@ -47,13 +42,6 @@ pub fn reload() {
         PROVIDER.with(|p| {
             p.borrow().load_from_file(&file);
         });
-    }
-}
-
-fn backup_custom() {
-    let src = style_path();
-    if src.exists() {
-        fs::copy(&src, custom_backup_path()).ok();
     }
 }
 

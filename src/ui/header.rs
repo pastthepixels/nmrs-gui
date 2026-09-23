@@ -1,6 +1,6 @@
 use glib::clone;
 use gtk::prelude::*;
-use gtk::{Align, Box as GtkBox, HeaderBar, Label, ListBox, Orientation, Switch, glib};
+use gtk::{Align, Box as GtkBox, HeaderBar, Label, Orientation, Switch, glib};
 use std::cell::Cell;
 use std::collections::HashSet;
 use std::rc::Rc;
