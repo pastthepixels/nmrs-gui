@@ -41,13 +41,11 @@ impl WiredDeviceRowController {
     }
 
     fn attach_arrow(&self) {
-        let click = GestureClick::new();
-
         let device = self.device.clone();
         let stack = self.ctx.stack.clone();
         let page = self.details_page.clone();
 
-        click.connect_pressed(move |_, _, _, _| {
+        self.arrow.connect_clicked(move |_| {
             let device_c = device.clone();
             let stack_c = stack.clone();
             let page_c = page.clone();
@@ -57,32 +55,26 @@ impl WiredDeviceRowController {
                 stack_c.set_visible_child_name("wired-details");
             });
         });
-
-        self.arrow.add_controller(click);
     }
 
     fn attach_row_double(&self) {
         let click = GestureClick::new();
 
         let ctx = self.ctx.clone();
-        let device = self.device.clone();
-        let interface = device.interface.clone();
 
         let status = ctx.status.clone();
         let window = ctx.parent_window.clone();
         let on_success = ctx.on_success.clone();
 
-        click.connect_pressed(move |_, n, _, _| {
-            if n != 2 {
-                return;
-            }
-
-            status.set_text(&format!("Connecting to {interface}..."));
+        self.row.set_activatable(true);
+        self.row.connect_activated(move |row| {
+            row.set_subtitle("Connecting…");
 
             let nm_c = ctx.nm.clone();
             let status_c = status.clone();
             let window_c = window.clone();
             let on_success_c = on_success.clone();
+            let row = row.clone();
 
             glib::MainContext::default().spawn_local(async move {
                 window_c.set_sensitive(false);
@@ -95,6 +87,7 @@ impl WiredDeviceRowController {
                 }
                 window_c.set_sensitive(true);
                 status_c.set_text("");
+                row.set_subtitle("");
             });
         });
 
