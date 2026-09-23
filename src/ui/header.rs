@@ -19,34 +19,6 @@ pub struct ThemeDef {
     pub css: &'static str,
 }
 
-pub static THEMES: &[ThemeDef] = &[
-    ThemeDef {
-        key: "gruvbox",
-        name: "Gruvbox",
-        css: include_str!("../themes/gruvbox.css"),
-    },
-    ThemeDef {
-        key: "nord",
-        name: "Nord",
-        css: include_str!("../themes/nord.css"),
-    },
-    ThemeDef {
-        key: "dracula",
-        name: "Dracula",
-        css: include_str!("../themes/dracula.css"),
-    },
-    ThemeDef {
-        key: "catppuccin",
-        name: "Catppuccin",
-        css: include_str!("../themes/catppuccin.css"),
-    },
-    ThemeDef {
-        key: "tokyo",
-        name: "Tokyo Night",
-        css: include_str!("../themes/tokyo.css"),
-    },
-];
-
 pub fn build_header(
     ctx: Rc<NetworksContext>,
     list_container: &GtkBox,
