@@ -87,14 +87,12 @@ impl NetworkRowController {
     }
 
     fn attach_arrow(&self) {
-        let click = GestureClick::new();
-
         let ctx = self.ctx.clone();
         let net = self.net.clone();
         let stack = self.ctx.stack.clone();
         let page = self.details_page.clone();
 
-        click.connect_pressed(move |_, _, _, _| {
+        self.arrow.connect_clicked(move |_| {
             let ctx_c = ctx.clone();
             let net_c = net.clone();
             let stack_c = stack.clone();
@@ -118,13 +116,9 @@ impl NetworkRowController {
                 }
             });
         });
-
-        self.arrow.add_controller(click);
     }
 
     fn attach_row_double(&self) {
-        let click = GestureClick::new();
-
         let ctx = self.ctx.clone();
         let net = self.net.clone();
         let ssid = net.ssid.clone();
@@ -135,30 +129,27 @@ impl NetworkRowController {
         let window = ctx.parent_window.clone();
         let on_success = ctx.on_success.clone();
 
-        click.connect_pressed(move |_, n, _, _| {
-            if n != 2 {
-                return;
-            }
-
-            status.set_text(&format!("Connecting to {ssid}..."));
+        self.row.set_activatable(true);
+        self.row.connect_activated(move |row| {
+            row.set_subtitle("Connecting…");
 
             let ssid_c = ssid.clone();
             let nm_c = ctx.nm.clone();
             let status_c = status.clone();
             let window_c = window.clone();
             let on_success_c = on_success.clone();
+            let row = row.clone();
 
             glib::MainContext::default().spawn_local(async move {
                 if secured {
                     let have = nm_c.has_saved_connection(&ssid_c).await.unwrap_or(false);
 
                     if have {
-                        status_c.set_text(&format!("Connecting to {}...", ssid_c));
+                        row.set_subtitle("Connecting…");
                         window_c.set_sensitive(false);
                         let creds = WifiSecurity::WpaPsk { psk: "".into() };
                         match nm_c.connect(&ssid_c, None, creds).await {
                             Ok(_) => {
-                                status_c.set_text("");
                                 on_success_c();
                             }
                             Err(e) => status_c.set_text(&format!("Failed to connect: {e}")),
@@ -174,7 +165,7 @@ impl NetworkRowController {
                         );
                     }
                 } else {
-                    status_c.set_text(&format!("Connecting to {}...", ssid_c));
+                    row.set_subtitle("Connecting…");
                     window_c.set_sensitive(false);
                     let creds = WifiSecurity::Open;
                     match nm_c.connect(&ssid_c, None, creds).await {
@@ -184,14 +175,14 @@ impl NetworkRowController {
                         }
                         Err(e) => status_c.set_text(&format!("Failed to connect: {e}")),
                     }
+
                     window_c.set_sensitive(true);
                 }
 
+                row.set_subtitle("");
                 status_c.set_text("");
             });
         });
-
-        self.row.add_controller(click);
     }
 }
 
@@ -241,13 +232,9 @@ pub fn networks_view(
         row.set_title(&display_name);
 
         if is_current_network(&net, current_ssid, current_band) {
-            let connected_label = Label::new(Some("Connected"));
-            connected_label.add_css_class("connected-label");
-            row.add_prefix(&connected_label);
+            row.set_subtitle("Connected");
         } else if saved_ssids.contains(&net.ssid) {
-            let saved_label = Label::new(Some("Saved"));
-            saved_label.add_css_class("saved-label");
-            row.add_prefix(&saved_label);
+            row.set_subtitle("Saved");
         }
 
         if let Some(s) = net.strength {
@@ -265,16 +252,19 @@ pub fn networks_view(
             }
 
             let strength_label = Label::new(Some(&format!("{s}%")));
-            row.add_suffix(&image);
-            row.add_suffix(&strength_label);
+            row.add_prefix(&strength_label);
+            row.add_prefix(&image);
 
             if s >= conn_threshold {
-                strength_label.add_css_class("network-good");
+                strength_label.add_css_class("success");
             } else if s > 65 {
-                strength_label.add_css_class("network-okay");
+                strength_label.add_css_class("warning");
             } else {
-                strength_label.add_css_class("network-poor");
+                strength_label.add_css_class("error");
             }
+
+            strength_label.add_css_class("dimmed");
+            strength_label.add_css_class("heading");
         }
 
         let arrow = gtk::Button::from_icon_name("go-next-symbolic");
