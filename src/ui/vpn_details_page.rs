@@ -38,19 +38,6 @@ impl VpnDetailsPage {
         let root = Box::new(Orientation::Vertical, 12);
         root.add_css_class("network-page");
 
-        let back = Button::with_label("← Back");
-        back.add_css_class("back-button");
-        back.set_halign(Align::Start);
-        back.set_cursor_from_name(Some("pointer"));
-        back.connect_clicked(clone![
-            #[weak]
-            stack,
-            move |_| {
-                stack.set_visible_child_name("networks");
-            }
-        ]);
-        root.append(&back);
-
         let header = Box::new(Orientation::Horizontal, 6);
         let icon = Image::from_icon_name("network-vpn-symbolic");
         icon.set_pixel_size(24);

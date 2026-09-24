@@ -20,19 +20,6 @@ impl VpnAddPage {
         let root = GtkBox::new(Orientation::Vertical, 12);
         root.add_css_class("network-page");
 
-        let back = Button::with_label("← Back");
-        back.add_css_class("back-button");
-        back.set_halign(Align::Start);
-        back.set_cursor_from_name(Some("pointer"));
-        back.connect_clicked(clone![
-            #[weak]
-            stack,
-            move |_| {
-                stack.set_visible_child_name("networks");
-            }
-        ]);
-        root.append(&back);
-
         let title = Label::new(Some("Add VPN"));
         title.add_css_class("network-title");
         title.set_halign(Align::Start);

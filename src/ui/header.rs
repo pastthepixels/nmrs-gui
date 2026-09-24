@@ -34,8 +34,8 @@ pub fn build_header(
     left_box.set_halign(Align::Start);
 
     ctx.conn_icon.set_valign(Align::Center);
-    ctx.conn_icon.set_margin_end(5);
-    ctx.conn_icon.set_margin_start(5);
+    ctx.conn_icon.set_margin_end(9);
+    ctx.conn_icon.set_margin_start(9);
     left_box.append(&ctx.conn_icon);
 
     ctx.conn_name.set_valign(Align::Center);

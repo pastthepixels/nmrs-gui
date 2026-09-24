@@ -43,9 +43,9 @@ pub fn vpn_add_button(ctx: &NetworksContext, list_container: &GtkBox) {
     row.set_start_icon_name(Some("list-add-symbolic"));
 
     let click = GestureClick::new();
-    let stack = ctx.stack.clone();
+    let stack = ctx.nav_view.clone();
     click.connect_pressed(move |_, _, _, _| {
-        stack.set_visible_child_name("vpn-add");
+        stack.push_by_tag("vpn-add");
     });
     row.add_controller(click);
 
@@ -122,7 +122,7 @@ fn vpn_list_view(
                         }
                     }
 
-                    ctx.stack.set_visible_child_name("vpn-details");
+                    ctx.nav_view.push_by_tag("vpn-details");
                 });
             });
 

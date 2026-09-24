@@ -10,9 +10,7 @@ pub mod wired_page;
 
 use adw::prelude::*;
 use adw::{Application, ApplicationWindow};
-use gtk::{
-    Box as GtkBox, Image, Label, Orientation, ScrolledWindow, Spinner, Stack, pango::EllipsizeMode,
-};
+use gtk::{Box as GtkBox, Image, Label, Orientation, ScrolledWindow, Stack, pango::EllipsizeMode};
 use std::cell::Cell;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -20,6 +18,27 @@ use tokio::sync::Notify;
 
 type Callback = Rc<dyn Fn()>;
 type CallbackCell = Rc<std::cell::RefCell<Option<Callback>>>;
+
+#[macro_export]
+macro_rules! strong_clone {
+    ( ($( $x:ident ),*) $y:expr ) => {
+        {
+            $(let $x = $x.clone();)*
+            $y
+        }
+    };
+}
+
+macro_rules! page {
+    ($child:expr, $title:expr, $tag:expr) => {{
+        let toolbar_view = adw::ToolbarView::new();
+        let page = adw::NavigationPage::new(&toolbar_view, $title);
+        toolbar_view.add_top_bar(&adw::HeaderBar::new());
+        toolbar_view.set_content(Some(&$child));
+        page.set_tag(Some($tag));
+        page
+    }};
+}
 
 pub fn freq_to_band(freq: u32) -> Option<&'static str> {
     match freq {
@@ -35,7 +54,12 @@ pub fn build_ui(app: &Application) {
     win.set_title(Some(""));
     win.set_default_size(450, 600);
 
-    let main_view = adw::ToolbarView::new();
+    let nav_view = adw::NavigationView::new();
+
+    let toolbar_view = adw::ToolbarView::new();
+    let main_page = adw::NavigationPage::new(&toolbar_view, "");
+    nav_view.add(&main_page);
+
     let status = Label::new(None);
     status.set_xalign(0.0);
     status.set_ellipsize(EllipsizeMode::End);
@@ -60,13 +84,12 @@ pub fn build_ui(app: &Application) {
     list_container.set_margin_start(24);
     list_container.set_margin_end(24);
 
-    let spinner = Spinner::new();
+    let spinner = adw::Spinner::new();
     spinner.set_halign(gtk::Align::Center);
     spinner.set_valign(gtk::Align::Center);
     spinner.set_property("width-request", 24i32);
     spinner.set_property("height-request", 24i32);
     spinner.add_css_class("loading-spinner");
-    spinner.start();
 
     stack.add_named(&spinner, Some("loading"));
     stack.set_visible_child_name("loading");
@@ -79,9 +102,9 @@ pub fn build_ui(app: &Application) {
     stack.add_named(&networks_scroller, Some("networks"));
 
     stack.set_vexpand(true);
-    main_view.set_content(Some(&stack));
+    toolbar_view.set_content(Some(&stack));
 
-    win.set_content(Some(&main_view));
+    win.set_content(Some(&nav_view));
     win.show();
 
     glib::MainContext::default().spawn_local(async move {
@@ -93,84 +116,62 @@ pub fn build_ui(app: &Application) {
                 let details_scroller = ScrolledWindow::new();
                 details_scroller.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
                 details_scroller.set_child(Some(details_page.widget()));
-                stack.add_named(&details_scroller, Some("details"));
+                nav_view.add(&page!(details_scroller, "Details", "details"));
 
                 let wired_details_page = Rc::new(wired_page::WiredPage::new(&stack));
                 let wired_details_scroller = ScrolledWindow::new();
                 wired_details_scroller
                     .set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
                 wired_details_scroller.set_child(Some(wired_details_page.widget()));
-                stack.add_named(&wired_details_scroller, Some("wired-details"));
+                nav_view.add(&page!(wired_details_scroller, "Details", "wired-details"));
 
                 let vpn_details_page = Rc::new(vpn_details_page::VpnDetailsPage::new(&stack));
                 let vpn_details_scroller = ScrolledWindow::new();
                 vpn_details_scroller.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
                 vpn_details_scroller.set_child(Some(vpn_details_page.widget()));
-                stack.add_named(&vpn_details_scroller, Some("vpn-details"));
+                nav_view.add(&page!(vpn_details_scroller, "Details", "vpn-details"));
 
                 let vpn_add = vpn_add_page::VpnAddPage::new(&stack, &win);
                 let vpn_add_scroller = ScrolledWindow::new();
                 vpn_add_scroller.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
                 vpn_add_scroller.set_child(Some(vpn_add.widget()));
-                stack.add_named(&vpn_add_scroller, Some("vpn-add"));
+                nav_view.add(&page!(vpn_add_scroller, "Add VPN", "vpn-add"));
 
                 let conn_icon = conn_icon.clone();
                 let conn_name = conn_name.clone();
                 let scan_spinner = scan_spinner.clone();
 
                 let on_success: Rc<dyn Fn()> = {
-                    let list_container = list_container.clone();
-                    let is_scanning = is_scanning.clone();
-                    let nm = nm.clone();
-                    let status = status.clone();
-                    let conn_icon = conn_icon.clone();
-                    let conn_name = conn_name.clone();
-                    let scan_spinner = scan_spinner.clone();
-                    let stack = stack.clone();
-                    let parent_window = win.clone();
-                    let details_page = details_page.clone();
-                    let wired_details_page = wired_details_page.clone();
-                    let vpn_details_page = vpn_details_page.clone();
-
                     let on_success_cell: CallbackCell = Rc::new(std::cell::RefCell::new(None));
-                    let on_success_cell_clone = on_success_cell.clone();
+                    let parent_window = win.clone();
+                    let callback = on_success_cell.borrow().as_ref().map(|cb| cb.clone());
+                    let refresh_ctx = Rc::new(networks::NetworksContext {
+                        nm: nm.clone(),
+                        on_success: callback.unwrap_or_else(|| Rc::new(|| {})),
+                        status: status.clone(),
+                        conn_icon: conn_icon.clone(),
+                        conn_name: conn_name.clone(),
+                        scan_spinner: scan_spinner.clone(),
+                        stack: stack.clone(),
+                        nav_view: nav_view.clone(),
+                        parent_window: parent_window.clone(),
+                        details_page: details_page.clone(),
+                        wired_details_page: wired_details_page.clone(),
+                        vpn_details_page: vpn_details_page.clone(),
+                    });
+                    let callback = Rc::new(strong_clone!((list_container, is_scanning) move || {
+                        glib::spawn_future_local(strong_clone!(
+                            (refresh_ctx, list_container, is_scanning) async move {
+                            header::refresh_networks(
+                                refresh_ctx,
+                                &list_container,
+                                &is_scanning,
+                            )
+                            .await;
+                        }));
+                    })) as Rc<dyn Fn()>;
 
-                    let callback = Rc::new(move || {
-                        let list_container = list_container.clone();
-                        let is_scanning = is_scanning.clone();
-                        let nm = nm.clone();
-                        let status = status.clone();
-                        let conn_icon = conn_icon.clone();
-                        let conn_name = conn_name.clone();
-                        let scan_spinner = scan_spinner.clone();
-                        let stack = stack.clone();
-                        let parent_window = parent_window.clone();
-                        let on_success_cell = on_success_cell.clone();
-                        let details_page = details_page.clone();
-                        let wired_details_page = wired_details_page.clone();
-                        let vpn_details_page = vpn_details_page.clone();
-
-                        glib::MainContext::default().spawn_local(async move {
-                            let callback = on_success_cell.borrow().as_ref().map(|cb| cb.clone());
-                            let refresh_ctx = Rc::new(networks::NetworksContext {
-                                nm,
-                                on_success: callback.unwrap_or_else(|| Rc::new(|| {})),
-                                status,
-                                conn_icon,
-                                conn_name,
-                                scan_spinner,
-                                stack,
-                                parent_window,
-                                details_page: details_page.clone(),
-                                wired_details_page: wired_details_page.clone(),
-                                vpn_details_page: vpn_details_page.clone(),
-                            });
-                            header::refresh_networks(refresh_ctx, &list_container, &is_scanning)
-                                .await;
-                        });
-                    }) as Rc<dyn Fn()>;
-
-                    *on_success_cell_clone.borrow_mut() = Some(callback.clone());
+                    *on_success_cell.borrow_mut() = Some(callback.clone());
 
                     callback
                 };
@@ -183,6 +184,7 @@ pub fn build_ui(app: &Application) {
                     conn_name: conn_name.clone(),
                     scan_spinner: scan_spinner.clone(),
                     stack: stack.clone(),
+                    nav_view: nav_view.clone(),
                     parent_window: win.clone(),
                     details_page: details_page.clone(),
                     wired_details_page,
@@ -195,7 +197,7 @@ pub fn build_ui(app: &Application) {
 
                 let header =
                     header::build_header(ctx.clone(), &list_container, is_scanning.clone());
-                main_view.add_top_bar(&header);
+                toolbar_view.add_top_bar(&header);
 
                 {
                     let nm_device_monitor = nm.clone();

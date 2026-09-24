@@ -14,18 +14,6 @@ impl SettingsPage {
         root.set_margin_start(16);
         root.set_margin_end(16);
 
-        let back = Button::with_label("← Back");
-        back.add_css_class("back-button");
-        back.set_halign(Align::Start);
-        back.set_cursor_from_name(Some("pointer"));
-        {
-            let stack = stack.clone();
-            back.connect_clicked(move |_| {
-                stack.set_visible_child_name("networks");
-            });
-        }
-        root.append(&back);
-
         let title = Label::new(Some("Settings"));
         title.add_css_class("section-header");
         title.set_halign(Align::Start);

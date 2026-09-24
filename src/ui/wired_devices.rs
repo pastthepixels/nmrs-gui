@@ -6,6 +6,7 @@ use gtk::Image;
 use nmrs::models;
 use std::rc::Rc;
 
+use crate::strong_clone;
 use crate::ui::networks::NetworksContext;
 use crate::ui::wired_page::WiredPage;
 
@@ -41,18 +42,16 @@ impl WiredDeviceRowController {
 
     fn attach_arrow(&self) {
         let device = self.device.clone();
-        let stack = self.ctx.stack.clone();
+        let nav_view = self.ctx.nav_view.clone();
         let page = self.details_page.clone();
 
         self.arrow.connect_clicked(move |_| {
-            let device_c = device.clone();
-            let stack_c = stack.clone();
-            let page_c = page.clone();
-
-            glib::MainContext::default().spawn_local(async move {
-                page_c.update(&device_c);
-                stack_c.set_visible_child_name("wired-details");
-            });
+            glib::MainContext::default().spawn_local(
+                strong_clone!((device, page, nav_view) async move {
+                    page.update(&device);
+                    nav_view.push_by_tag("wired-details");
+                }),
+            );
         });
     }
 
@@ -113,7 +112,9 @@ pub fn wired_devices_view(
             models::DeviceState::Failed => Some("Failed"),
             // Hide transitional states (Unmanaged, Prepare, Config, etc)
             _ => None,
-        } { row.set_subtitle(s) }
+        } {
+            row.set_subtitle(s)
+        }
 
         let icon = Image::from_icon_name("network-wired-symbolic");
         icon.add_css_class("wired-icon");

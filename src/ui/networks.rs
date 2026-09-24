@@ -7,6 +7,7 @@ use nmrs::{NetworkManager, models};
 use std::collections::HashSet;
 use std::rc::Rc;
 
+use crate::strong_clone;
 use crate::ui::connect;
 use crate::ui::network_page::NetworkPage;
 
@@ -26,6 +27,7 @@ pub struct NetworksContext {
     pub conn_name: Label,
     pub scan_spinner: adw::Spinner,
     pub stack: gtk::Stack,
+    pub nav_view: adw::NavigationView,
     pub parent_window: adw::ApplicationWindow,
     pub details_page: Rc<NetworkPage>,
     pub wired_details_page: Rc<crate::ui::wired_page::WiredPage>,
@@ -40,6 +42,7 @@ impl NetworksContext {
         conn_name: &Label,
         scan_spinner: &adw::Spinner,
         stack: &gtk::Stack,
+        nav_view: &adw::NavigationView,
         parent_window: &adw::ApplicationWindow,
         details_page: Rc<NetworkPage>,
         wired_details_page: Rc<crate::ui::wired_page::WiredPage>,
@@ -55,6 +58,7 @@ impl NetworksContext {
             conn_name: conn_name.clone(),
             scan_spinner: scan_spinner.clone(),
             stack: stack.clone(),
+            nav_view: nav_view.clone(),
             parent_window: parent_window.clone(),
             details_page,
             wired_details_page,
@@ -88,32 +92,29 @@ impl NetworkRowController {
     fn attach_arrow(&self) {
         let ctx = self.ctx.clone();
         let net = self.net.clone();
-        let stack = self.ctx.stack.clone();
         let page = self.details_page.clone();
+        let nav_view = self.ctx.nav_view.clone();
 
         self.arrow.connect_clicked(move |_| {
-            let ctx_c = ctx.clone();
-            let net_c = net.clone();
-            let stack_c = stack.clone();
-            let page_c = page.clone();
+            glib::MainContext::default().spawn_local(
+                strong_clone!((ctx, net, page, nav_view) async move {
+                    if let Ok(info) = ctx.nm.show_details(&net).await {
+                        page.update(&info);
 
-            glib::MainContext::default().spawn_local(async move {
-                if let Ok(info) = ctx_c.nm.show_details(&net_c).await {
-                    page_c.update(&info);
-
-                    if let Ok(aps) = ctx_c.nm.list_access_points(None).await {
-                        let best = aps
-                            .iter()
-                            .filter(|ap| ap.ssid == net_c.ssid)
-                            .max_by_key(|ap| ap.strength);
-                        if let Some(ap) = best {
-                            page_c.enrich_with_ap(ap);
+                        if let Ok(aps) = ctx.nm.list_access_points(None).await {
+                            let best = aps
+                                .iter()
+                                .filter(|ap| ap.ssid == net.ssid)
+                                .max_by_key(|ap| ap.strength);
+                            if let Some(ap) = best {
+                                page.enrich_with_ap(ap);
+                            }
                         }
-                    }
 
-                    stack_c.set_visible_child_name("details");
-                }
-            });
+                        nav_view.push_by_tag("details");
+                    }
+                }),
+            );
         });
     }
 
