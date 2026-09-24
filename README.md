@@ -1,16 +1,13 @@
-# <p align="center"> nmrs 🦀
+# <p align="center"> nmrs-gui (forked) 🦀
 
-A GTK4 GUI for managing NetworkManager connections on Linux. Built with Rust and libadwaita.
+A GTK4 GUI for managing NetworkManager connections on Linux. Built with Rust and libadwaita, unlike upstream
 
 [![CI](https://github.com/networkmanager-rs/nmrs-gui/actions/workflows/ci.yml/badge.svg)](https://github.com/networkmanager-rs/nmrs-gui/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/nmrs-gui)](https://crates.io/crates/nmrs-gui)
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/472308a0-f902-41a1-a6d0-66bffb7793f8" width="300" height="300" />
-
-  <img src="https://github.com/user-attachments/assets/d495e4a1-d505-4e0a-80ce-edaf8a67b739" width="300" height="300" />
-
-  <img src="https://github.com/user-attachments/assets/84d6ca5e-4e65-4d91-ae59-c86d5e1d825a" width="300" height="300" />
+  <img src="resources/screenshots/main.png" width="300" />
+  <img src="resources/screenshots/details.png" width="300" />
 </p>
 
 ## Features
@@ -19,25 +16,15 @@ A GTK4 GUI for managing NetworkManager connections on Linux. Built with Rust and
 - Connect to, disconnect from, and forget Wi-Fi networks
 - Full Ethernet device support
 - WPA-Enterprise (EAP) connections with certificate path support
-- Pre-defined themes: Catppuccin, Dracula, Gruvbox, Nord, Tokyo Night
 - Custom CSS theming via `~/.config/nmrs/style.css`
-- System light/dark mode toggle
+
+---
+
+- GNOME HIG conforming UI that uses libadwaita components where possible
+    - and as such, it's pretty!
+- Accessible, screen reader friendly UI using dedicated widgets rather than hacked labels
 
 ## Installation
-
-### Arch Linux (AUR)
-
-```bash
-yay -S nmrs
-# or
-paru -S nmrs
-```
-
-### From crates.io
-
-```bash
-cargo install nmrs-gui
-```
 
 ### From source
 
@@ -93,8 +80,6 @@ window {
   background-color: #1e1e2e;
 }
 ```
-
-Choose a built-in theme from the Settings page inside the app.
 
 ## License
 
