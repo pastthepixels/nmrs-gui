@@ -33,8 +33,15 @@ macro_rules! page {
     ($child:expr, $title:expr, $tag:expr) => {{
         let toolbar_view = adw::ToolbarView::new();
         let page = adw::NavigationPage::new(&toolbar_view, $title);
+        let container = adw::Bin::builder()
+            .margin_start(24)
+            .margin_end(24)
+            .margin_bottom(24)
+            .margin_top(4)
+            .build();
         toolbar_view.add_top_bar(&adw::HeaderBar::new());
-        toolbar_view.set_content(Some(&$child));
+        toolbar_view.set_content(Some(&container));
+        container.set_child(Some(&$child));
         page.set_tag(Some($tag));
         page
     }};
